@@ -361,7 +361,7 @@ public class Base {
         location = nextEditorLocation();
       }
       // If file did not exist, null will be returned for the Editor
-      if (handleOpen(path, location) != null) {
+      if (handleOpen(path, location, false) != null) {
         opened++;
       }
     }
@@ -500,6 +500,7 @@ public class Base {
     "jan", "feb", "mar", "apr", "may", "jun",
     "jul", "aug", "sep", "oct", "nov", "dec"
   };
+  private static final int NUM_RECENT_OPEN = 4;
 
   /**
    * Handle creating a sketch folder, return its base .pde file
@@ -562,7 +563,7 @@ public class Base {
     try {
       String path = createNewUntitled();
       if (path != null) {
-        Editor editor = handleOpen(path);
+        Editor editor = handleOpen(path, nextEditorLocation(), false);
         editor.untitled = true;
       }
 
@@ -666,11 +667,11 @@ public class Base {
    *         can be set by the caller
    */
   public Editor handleOpen(String path) {
-    return handleOpen(path, nextEditorLocation());
+    return handleOpen(path, nextEditorLocation(), true);
   }
 
 
-  protected Editor handleOpen(String path, int[] location) {
+  protected Editor handleOpen(String path, int[] location, boolean rememberOpenedFile) {
 //    System.err.println("entering handleOpen " + path);
 
     File file = new File(path);
@@ -684,6 +685,10 @@ public class Base {
 //        System.err.println("  handleOpen: already opened");
         return editor;
       }
+    }
+    
+    if (rememberOpenedFile) {
+      setRecentlyOpened(path);
     }
 
     // If the active editor window is an untitled, and un-modified document,
@@ -745,6 +750,51 @@ public class Base {
     return editor;
   }
 
+  public void rebuildOpenRecentMenu(JMenu menu) {
+    menu.removeAll();
+    Collection<String> recentlyOpened = getRecentlyOpenedFiles();
+    for (String fileName : recentlyOpened) {
+      if (fileName.length() > 40) {
+        // truncate the name
+        fileName = fileName.substring(0,20) + "..." + fileName.substring(fileName.length() - 40);
+      }
+      final String displayFileName = fileName;
+      JMenuItem item = new JMenuItem(fileName);
+      menu.add(item);
+      item.addActionListener(new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+          handleOpen(displayFileName);
+        }
+      });
+    }
+  }
+
+  private Collection<String> getRecentlyOpenedFiles() {
+    Set<String> fileNames = new LinkedHashSet<String>();
+    for (int i = 0 ; i < NUM_RECENT_OPEN ; i++) {
+      String result = Preferences.get("open.recent." + i);
+      if (result == null) {
+        break;
+      }
+      fileNames.add(result);
+    }
+    return fileNames;
+  }
+
+  void setRecentlyOpened(String path) {
+    int count = 0;
+    Collection<String> fileNames = getRecentlyOpenedFiles();
+    fileNames.add(path);
+    String fileNamesArr[] = fileNames.toArray(new String[fileNames.size()]);
+    int index = 0;
+    if (fileNamesArr.length > NUM_RECENT_OPEN) {
+      index = fileNamesArr.length - NUM_RECENT_OPEN;
+    }
+    for (; count < NUM_RECENT_OPEN  && index < fileNamesArr.length; count++, index++) {
+      Preferences.set("open.recent." + count, fileNamesArr[index]);
+    }
+  }
 
   /**
    * Close a sketch as specified by its editor window.

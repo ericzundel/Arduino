@@ -499,6 +499,16 @@ public class Editor extends JFrame implements RunnerListener {
       });
     fileMenu.add(item);
 
+    final JMenu openRecentMenu = new JMenu(_("Open Recent"));
+    openRecentMenu.addChangeListener(new ChangeListener() {
+      
+      @Override
+      public void stateChanged(ChangeEvent arg0) {
+        base.rebuildOpenRecentMenu(openRecentMenu);
+      }
+    });
+    fileMenu.add(openRecentMenu);
+    
     if (sketchbookMenu == null) {
       sketchbookMenu = new JMenu(_("Sketchbook"));
       base.rebuildSketchbookMenu(sketchbookMenu);
@@ -2246,6 +2256,7 @@ public class Editor extends JFrame implements RunnerListener {
     }
     //toolbar.clear();
     toolbar.deactivate(EditorToolbar.SAVE);
+    base.setRecentlyOpened(sketch.getPrimaryFile().getPath());
     return saved;
   }
 
@@ -2277,6 +2288,7 @@ public class Editor extends JFrame implements RunnerListener {
     } finally {
       // make sure the toolbar button deactivates
       toolbar.deactivate(EditorToolbar.SAVE);
+      base.setRecentlyOpened(sketch.getPrimaryFile().getPath());
     }
 
     return true;
