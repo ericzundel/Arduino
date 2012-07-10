@@ -753,18 +753,22 @@ public class Base {
   public void rebuildOpenRecentMenu(JMenu menu) {
     menu.removeAll();
     Collection<String> recentlyOpened = getRecentlyOpenedFiles();
+    
     for (String fileName : recentlyOpened) {
+      final String openFileName = fileName;
+      String displayFileName;
       if (fileName.length() > 40) {
         // truncate the name
-        fileName = fileName.substring(0,20) + "..." + fileName.substring(fileName.length() - 40);
+        displayFileName = fileName.substring(0,20) + "..." + fileName.substring(fileName.length() - 40);
+      } else {
+        displayFileName = fileName;
       }
-      final String displayFileName = fileName;
-      JMenuItem item = new JMenuItem(fileName);
+      JMenuItem item = new JMenuItem(displayFileName);
       menu.add(item);
       item.addActionListener(new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
-          handleOpen(displayFileName);
+          handleOpen(openFileName);
         }
       });
     }
